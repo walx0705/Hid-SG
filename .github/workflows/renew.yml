@@ -29,13 +29,16 @@ jobs:
           sudo apt-get install -y xvfb
           pip install playwright requests 'requests[socks]'
           python -m playwright install --with-deps chrome
-          
+
+      # ⚠️ 关键修改：添加 continue-on-error: true，代理失败不中断工作流
       - name: ⚙ 设置代理 (sing-box)
+        continue-on-error: true
         env:
           NODE_LINK: ${{ secrets.NODE_LINK }}
         run: |
           bash <(wget -qO- https://main.ssss.nyc.mn/setup_proxy.sh)
-          
+
+      # Python 脚本会自动检测代理是否可用，不可用则直连，所有阶段均有 TG 截图通知
       - name: 🚀 运行续期脚本
         env:
           EMAIL: ${{ secrets.EMAIL }}
