@@ -18,6 +18,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      # =======================================================
+      # 新增步骤：拉取私库 walx0705/hosting 中的 hiden.py
+      - name: 拉取私有仓库 hosting
+        uses: actions/checkout@v6
+        with:
+          repository: walx0705/hosting
+          token: ${{ secrets.GH_TOKEN }}
+          path: hosting_repo
+      # =======================================================
+
       - name: ⚙ 设置 Python
         uses: actions/setup-python@v6
         with:
@@ -39,6 +49,8 @@ jobs:
           bash <(wget -qO- https://main.ssss.nyc.mn/setup_proxy.sh)
 
       # Python 脚本会自动检测代理是否可用，不可用则直连，所有阶段均有 TG 截图通知
+      # =======================================================
+      # 修改点：将 python3 app.py 改为 python3 hosting_repo/hiden.py
       - name: 🚀 运行续期脚本
         env:
           EMAIL: ${{ secrets.EMAIL }}
@@ -48,7 +60,8 @@ jobs:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           IS_PROXY: ${{ env.IS_PROXY }}
           PROXY_SERVER: ${{ env.PROXY_SERVER }}
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python3 app.py
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python3 hosting_repo/hiden.py
+      # =======================================================
 
       - name: 🧽 清理进程和临时文件
         if: always()
@@ -59,17 +72,20 @@ jobs:
           pkill -f Xvfb || true
           rm -f sing-box sing-box-config.json sing-box.log
 
+      # =======================================================
+      # 修复点：加上 --repo "${{ github.repository }}" 避免找不到 .git 目录报错
       - name: 🧹 清理旧的工作流运行记录
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          runs=$(gh run list --workflow="${{ github.workflow }}" --limit=100 --json databaseId --jq '.[].databaseId')
+          runs=$(gh run list --repo "${{ github.repository }}" --workflow="${{ github.workflow }}" --limit=100 --json databaseId --jq '.[].databaseId')
           count=0
           for run_id in $runs; do
             count=$((count + 1))
             if [ $count -gt 1 ]; then
               echo "删除运行记录: $run_id"
-              gh run delete $run_id || true
+              gh run delete $run_id --repo "${{ github.repository }}" || true
             fi
           done
+      # =======================================================
