@@ -21,6 +21,16 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: true
 
+      # =======================================================
+      # 1. 精准拉取私库根目录下的 hiden.py 文件
+      - name: 📥 拉取私库 hiden.py
+        uses: actions/checkout@v6
+        with:
+          repository: walx0705/Renewal-Collection
+          token: ${{ secrets.GH_TOKEN }}
+          path: private_repo
+          sparse-checkout: hiden.py
+      # =======================================================
 
       - name: ⚙ 设置 Python
         uses: actions/setup-python@v6
@@ -41,6 +51,8 @@ jobs:
         run: |
           bash <(wget -qO- https://main.ssss.nyc.mn/setup_proxy.sh)
 
+      # =======================================================
+      # 2. 修改运行路径：从 python -u app.py 改为运行私库的 hiden.py
       - name: 🚀 运行续期脚本
         env:
           EMAIL: ${{ secrets.EMAIL }}
@@ -48,7 +60,8 @@ jobs:
           COOKIE_VALUE: ${{ secrets.COOKIE_VALUE }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python -u app.py
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" python -u private_repo/hiden.py
+      # =======================================================
 
       # 更新时间到time.txt,避免6个月未更新导致工作流暂停
       - name: 🕒 更新时间
